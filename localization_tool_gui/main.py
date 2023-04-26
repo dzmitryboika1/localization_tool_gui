@@ -1,14 +1,12 @@
-import json
 import subprocess
 import sys
-from pathlib import Path
 
 import tkinter.filedialog as fd
 from tkinter import *
 from tkinter.ttk import Combobox
 from tkinter.messagebox import showinfo
-from requests import HTTPError
-import translators as ts
+
+from localization_tool_gui.translator import localize_single_arb_file, multiple_arb_files_localization
 
 LANGUAGES = {'Russian': 'ru', 'English': 'en', 'German': 'de', 'Spanish': 'es', 'French': 'fr'}
 
@@ -93,7 +91,7 @@ class AppInterface:
                 self.output_directory = fd.askdirectory(parent=self.app, initialdir=self.input_directory,
                                                         title='Save To')
                 showinfo(title='Selected Directory To Save', message=self.output_directory)
-                self.translate_single_file(self.input_file, self.language)
+                localize_single_arb_file(self.input_file, self.output_directory, self.language)
                 self.input_file = None
                 self.selected_path_entry.delete(0, END)
                 self.language = None
@@ -103,7 +101,7 @@ class AppInterface:
                 self.output_directory = fd.askdirectory(parent=self.app, initialdir=self.input_directory,
                                                         title='Save To')
                 showinfo(title='Selected Directory To Save', message=self.output_directory)
-                self.multiple_translation()
+                multiple_arb_files_localization(self.input_directory, self.output_directory, self.language)
                 self.input_directory = None
                 self.selected_path_entry.delete(0, END)
                 self.language = None
@@ -113,50 +111,6 @@ class AppInterface:
                 showinfo(title='Warning', message='Please, choose file or directory!')
         else:
             showinfo(title='Warning', message='Please, choose a target language!')
-
-    def translate(self, text, lang):
-        translated_text = ''
-        try:
-            translated_text = ts.translate_text(text, from_language='auto', to_language=lang, translator='google')
-            return translated_text
-        except HTTPError:
-            print("HTTPError, try to use another translator in parameter translator")
-            return translated_text
-
-    def translate_single_file(self, file_path, lang):
-        input_path = Path(file_path)
-        file_name = input_path.stem
-        if Path(file_path).is_file() and Path(file_path).suffix == '.arb':
-            try:
-                with open(file_path, encoding='utf-8') as file:
-                    text = file.read()
-                    # get list of tuples with key-value pairs from arb
-                    decoded_arb_file = json.loads(text, object_pairs_hook=list)
-            except Exception as err:
-                print(err)
-            # get values from arb file and converse it to single string of values using line break for delimiter
-            # it needs to send one request to translator API instead of many for each value"""
-            values_str = '\n'.join([key_value[1] for key_value in decoded_arb_file])
-
-            translated_values_list = self.translate(values_str, lang).split('\n')
-
-            # collect output arb with translated values
-            output_arb = {value[0]: translated_values_list[index] for index, value in enumerate(decoded_arb_file)}
-
-            output_file_name = f'translated_{Path(file_name).stem}.arb'
-            output_path = f'{self.output_directory}/{output_file_name}'
-
-            with open(output_path, "w", encoding="utf-8") as write_file:
-                json.dump(output_arb, write_file, ensure_ascii=False)
-
-    def multiple_translation(self):
-        all_files = []
-        for ext in self.extensions:
-            all_files.extend(Path(self.input_directory).glob(ext[1]))
-
-        for index, item in enumerate(all_files):
-            self.translate_single_file(item, self.language)
-            print(f"Completed: {index + 1}/{len(all_files)}")
 
 
 def main():
