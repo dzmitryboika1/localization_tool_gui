@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "localization-tool-gui"
+version = "0.1.0"
+description = "The app translate .arb files for localization of Flutter apps"
+authors = ["dzmitryboika1 <dzmitryboika1@gmail.com>"]
+readme = "README.md"
+packages = [{include = "localization_tool_gui"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+translators = "^5.7.0"
+requests = "^2.28.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
